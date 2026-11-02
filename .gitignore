@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.pnpm-store/
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.tmp/
+apps/web/public/fonts/
+apps/web/public/samples/
+apps/web/public/templates/

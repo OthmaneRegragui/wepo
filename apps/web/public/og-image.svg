@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1200" y2="0">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="50%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect y="0" width="1200" height="6" fill="url(#bar)"/>
+  <text x="80" y="220" font-family="Inter, ui-sans-serif, system-ui" font-size="72" font-weight="600" fill="#0f172a">Wepo Office</text>
+  <text x="80" y="300" font-family="Inter, ui-sans-serif, system-ui" font-size="28" fill="#475569">Edit Word, Excel and PowerPoint files in your browser</text>
+  <text x="80" y="360" font-family="Inter, ui-sans-serif, system-ui" font-size="22" fill="#64748b">No account · No uploads · Files stay on your device</text>
+  <circle cx="980" cy="280" r="90" fill="#2563eb" opacity="0.12"/>
+  <circle cx="1040" cy="340" r="70" fill="#16a34a" opacity="0.12"/>
+  <circle cx="920" cy="360" r="60" fill="#ea580c" opacity="0.12"/>
+</svg>

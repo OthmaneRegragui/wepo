@@ -1,0 +1,37 @@
+{
+  "name": "wepo-office-suite",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "npm@10.9.8",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @wepo/web",
+    "build": "npm run build -w @wepo/core && npm run build -w @wepo/web",
+    "preview": "npm run preview -w @wepo/web",
+    "typecheck": "npm run typecheck -w @wepo/core && npm run typecheck -w @wepo/web",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "samples": "node scripts/make-samples.mjs",
+    "postinstall": "node scripts/copy-editor-fonts.mjs"
+  },
+  "devDependencies": {
+    "@betteroffice/fonts": "^0.4.2",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.10.0",
+    "docx": "^9.15.1",
+    "pptxgenjs": "^4.0.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.0.18",
+    "xlsx": "^0.18.5"
+  }
+}
