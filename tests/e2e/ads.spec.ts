@@ -230,7 +230,7 @@ test('native banner container survives SPA navigation without re-running its scr
 
 test.describe('eligible route coverage', () => {
   for (const path of ['/', '/word', '/sheets', '/slides', '/privacy', '/licenses', '/compatibility', '/404']) {
-    test(`${path} has the global Social Bar and exactly one native placement`, async ({ page }) => {
+    test(`${path} has the global banner, Social Bar and exactly one native placement`, async ({ page }) => {
       await installAdStubs(page);
       await page.goto(path);
 
@@ -244,9 +244,15 @@ test.describe('eligible route coverage', () => {
       expect(await page.locator('script[data-wepo-social-bar]').count()).toBe(1);
       expect(await page.locator('script[data-wepo-native-key]').count()).toBe(1);
 
-      if (path !== '/') {
-        expect(await page.locator('script[data-wepo-ad-key]').count()).toBe(0);
+      const expectedDisplayCount = path === '/' ? 4 : path === '/word' || path === '/sheets' || path === '/slides' ? 2 : 1;
+      await expect.poll(async () => (await adKeys(page)).length, { timeout: 30_000 }).toBe(expectedDisplayCount);
+
+      const displayKeys = await adKeys(page);
+      expect(displayKeys).toContain(EXPECTED['728x90'].key);
+      if (path === '/word' || path === '/sheets' || path === '/slides') {
+        expect(displayKeys).toContain(EXPECTED['300x250'].key);
       }
+      expect(displayKeys).not.toContain(EXPECTED['320x50'].key);
     });
   }
 });

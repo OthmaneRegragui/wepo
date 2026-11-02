@@ -10,10 +10,11 @@
  *   VITE_ADS_NATIVE_BANNER=false
  *   VITE_ADS_SOCIAL_BAR=false
  *   VITE_ADS_SMARTLINK=false
- *   VITE_ADS_PLACEMENT_HOME_LEADERBOARD=false
- *   VITE_ADS_PLACEMENT_HOME_MOBILE_BANNER=false
+ *   VITE_ADS_PLACEMENT_SITE_LEADERBOARD=false
+ *   VITE_ADS_PLACEMENT_SITE_MOBILE_BANNER=false
  *   VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false
  *   VITE_ADS_PLACEMENT_HOME_RECTANGLE=false
+ *   VITE_ADS_PLACEMENT_APP_RECTANGLE=false
  *   VITE_ADS_PLACEMENT_SITE_NATIVE=false
  *   VITE_ADS_PLACEMENT_HOME_SIDEBAR=false
  *   VITE_ADS_PLACEMENT_HOME_SMARTLINK=false
@@ -23,10 +24,11 @@
 export type AdFormat = 'display-banner' | 'native-banner' | 'social-bar' | 'smartlink';
 
 export type AdPlacementId =
-  | 'home-leaderboard'
-  | 'home-mobile-banner'
+  | 'site-leaderboard'
+  | 'site-mobile-banner'
   | 'dashboard-banner'
   | 'home-rectangle'
+  | 'app-rectangle'
   | 'site-native'
   | 'home-sidebar'
   | 'home-smartlink'
@@ -143,10 +145,11 @@ function placementEnabled(id: AdPlacementId, format: AdFormat): boolean {
 }
 
 const placementDefinitions: ReadonlyArray<Omit<AdPlacementConfig, 'enabled'>> = [
-  { id: 'home-leaderboard', format: 'display-banner', label: '728 × 90 leaderboard' },
-  { id: 'home-mobile-banner', format: 'display-banner', label: '320 × 50 mobile banner' },
+  { id: 'site-leaderboard', format: 'display-banner', label: 'Responsive leaderboard' },
+  { id: 'site-mobile-banner', format: 'display-banner', label: 'Responsive mobile banner' },
   { id: 'dashboard-banner', format: 'display-banner', label: '468 × 60 dashboard banner' },
   { id: 'home-rectangle', format: 'display-banner', label: '300 × 250 rectangle' },
+  { id: 'app-rectangle', format: 'display-banner', label: '300 × 250 app rectangle' },
   { id: 'site-native', format: 'native-banner', label: 'Native banner' },
   { id: 'home-sidebar', format: 'display-banner', label: 'Desktop sidebar banner' },
   { id: 'home-smartlink', format: 'smartlink', label: 'Sponsored offers' },
@@ -172,12 +175,16 @@ export const adConfig = {
 } as const;
 
 /**
- * Homepage-only placements. Display banners and the smartlink are intentionally
- * scoped to `/`; the native banner and Social Bar live in the shared shell.
+ * Content routes may host display/native placements. Active editor routes
+ * (`/:kind/edit`) are excluded because they are full-screen work surfaces.
  */
-export function isAdRoute(pathname: string): boolean {
+export function isEditorRoute(pathname: string): boolean {
   const normalized = pathname.replace(/\/+$/, '') || '/';
-  return normalized === '/';
+  return /^\/[^/]+\/edit$/.test(normalized);
+}
+
+export function isAdRoute(pathname: string): boolean {
+  return !isEditorRoute(pathname);
 }
 
 export function isAdPlacementEnabled(id: AdPlacementId): boolean {

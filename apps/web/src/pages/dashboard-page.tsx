@@ -88,16 +88,6 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200/70 bg-white/60 py-6" aria-label="Sponsored placement">
-        <div className="container-page flex justify-center">
-          {desktop ? (
-            <DisplayBanner placement="home-leaderboard" size="728x90" />
-          ) : (
-            <DisplayBanner placement="home-mobile-banner" size="320x50" />
-          )}
-        </div>
-      </section>
-
       <section className="container-page py-14 sm:py-16">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>

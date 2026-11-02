@@ -110,27 +110,28 @@ the build image. No backend Worker or API is required.
 
 Advertising is supplied by Adsterra and is split between two scopes:
 
-- **Homepage-only** (`/`): classic display banners and the sponsored smartlink.
-- **Shared shell**: the Native Banner on every `SiteLayout` page and the Social
-  Bar once per document lifecycle on every route.
-
-The same React route serves the homepage and dashboard, so its display
-placements are the union of both sets:
+- **Shared shell**: a responsive leaderboard/mobile banner and the Native Banner
+  on every `SiteLayout` page, plus the Social Bar once per document lifecycle on
+  every route.
+- **Page-specific**: extra home dashboard placements, the sponsored smartlink
+  and the desktop sidebar; application landing pages add a content rectangle.
 
 | Placement | Scope | Format | Desktop | Mobile |
 |---|---|---|---|---|
-| Top leaderboard | Homepage | 728 × 90 | Shown | — |
-| Top banner | Homepage | 320 × 50 | — | Shown |
+| Top leaderboard | All content pages | 728 × 90 | Shown at ≥ 768 px | — |
+| Top banner | All content pages | 320 × 50 | — | Shown below 768 px |
 | Dashboard banner | Homepage | 468 × 60 | Shown at ≥ 640 px | — |
 | Content rectangle | Homepage | 300 × 250 | Shown | Shown (fits 320 px) |
+| App landing rectangle | `/word`, `/sheets`, `/slides` | 300 × 250 | Shown | Shown (fits 320 px) |
 | Native banner | Shared shell | Publisher native | Shown | Shown |
 | Desktop sidebar | Homepage | 160 × 600 | Shown at ≥ 1280 px | — |
 | Desktop sidebar | Homepage | 160 × 300 | Shown at 1024–1279 px | — |
 | Social Bar | Global | Publisher script | Once per document | Once per document |
 | Sponsored offers | Homepage | Smartlink | Shown | Shown |
 
-Only one sidebar size is ever mounted. The media-query selection happens before
-the component mounts, so desktop and mobile scripts never load together.
+Only one top banner size is ever mounted: the media query selects the leaderboard
+or mobile format before the component mounts. Only one sidebar size is ever
+mounted, for the same reason, so desktop and mobile scripts never load together.
 
 Classic banners share `window.atOptions`, so `ad-loader.ts` serialises them:
 create the dedicated container, set the exact `atOptions`, append the exact
@@ -139,14 +140,17 @@ start the next banner. Scripts are never loaded concurrently and each key has a
 single container. If a script is blocked or times out, the slot reports a
 non-blocking failure and the rest of the page continues to work.
 
-The Native Banner is mounted once in `SiteLayout`, which covers the homepage,
-application landing pages, privacy, licenses, compatibility, and 404. The loader
-creates one publisher container with the exact `container-<key>` id and runs the
-publisher script only once per document. On SPA navigation the live container is
-moved into the next page's slot; while no eligible slot is mounted it is
-detached from the document rather than concealed on a live page. It is never
-recreated or re-executed, so a filled placement survives route changes and
-duplicate widgets cannot register.
+The native banner and the responsive top banner are mounted in `SiteLayout`,
+which covers the homepage, application landing pages, privacy, licenses,
+compatibility, and 404. The native loader creates one publisher container with
+the exact `container-<key>` id and runs the publisher script only once per
+document. On SPA navigation the live container is moved into the next page's
+slot; while no eligible slot is mounted it is detached from the document rather
+than concealed on a live page. The top banner stays mounted across content-route
+transitions, so it is not reloaded on every navigation. It is never recreated or
+re-executed, so a filled placement survives route changes and duplicate widgets
+cannot register. Application landing pages add a route-local 300 × 250 rectangle
+in their content sidebar.
 
 Active editor routes (`/:kind/edit`) do not use `SiteLayout`, so they contain no
 native or display slot. The globally mounted Social Bar remains active there
@@ -174,21 +178,24 @@ Advertising is disabled at build time by any of these Vite environment flags:
 | `VITE_ADS_NATIVE_BANNER=false` | Native banner |
 | `VITE_ADS_SOCIAL_BAR=false` | Social Bar |
 | `VITE_ADS_SMARTLINK=false` | Sponsored offers |
-| `VITE_ADS_PLACEMENT_HOME_LEADERBOARD=false` | 728 × 90 |
-| `VITE_ADS_PLACEMENT_HOME_MOBILE_BANNER=false` | 320 × 50 |
+| `VITE_ADS_PLACEMENT_SITE_LEADERBOARD=false` | Top 728 × 90 banner |
+| `VITE_ADS_PLACEMENT_SITE_MOBILE_BANNER=false` | Top 320 × 50 banner |
 | `VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false` | 468 × 60 |
-| `VITE_ADS_PLACEMENT_HOME_RECTANGLE=false` | 300 × 250 |
+| `VITE_ADS_PLACEMENT_HOME_RECTANGLE=false` | Home 300 × 250 |
+| `VITE_ADS_PLACEMENT_APP_RECTANGLE=false` | App landing 300 × 250 |
 | `VITE_ADS_PLACEMENT_SITE_NATIVE=false` | Native banner placement |
 | `VITE_ADS_PLACEMENT_HOME_SIDEBAR=false` | 160 × 600 / 160 × 300 |
 | `VITE_ADS_PLACEMENT_HOME_SMARTLINK=false` | Sponsored offers |
 | `VITE_ADS_PLACEMENT_SITE_SOCIAL_BAR=false` | Social Bar placement |
 
-The CSP in `_headers` adds only the three publisher script origins plus
-HTTPS allowances for ad creatives, frames, images, fonts, media, and tracking
-beacons. COOP `same-origin` and COEP `require-corp` remain in place. A scoped
-`document.createElement` patch marks ad-created iframes as `credentialless`
-while advertising is enabled, which keeps cross-origin ad frames loading
-without weakening cross-origin isolation or breaking `SharedArrayBuffer`.
+The CSP in `_headers` allowlists the publisher and nested ad-network script
+origins (including `aqml.org`, wildcard Adsterra hosts and the creative CDN)
+plus HTTPS allowances for ad creatives, frames, images, fonts, media, and
+tracking beacons. COOP `same-origin` and COEP `credentialless` remain in place,
+so cross-origin creatives and pixels without CORP headers load without
+weakening cross-origin isolation or breaking `SharedArrayBuffer`. A scoped
+`document.createElement` patch also marks ad-created iframes as
+`credentialless` for browsers that still require the attribute.
 
 Adsterra can return empty or no-op scripts to automated/datacenter traffic, so a
 local build can verify sequencing, route coverage, CSP, failure handling, and

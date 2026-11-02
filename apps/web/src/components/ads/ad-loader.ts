@@ -142,8 +142,8 @@ async function runDisplayBanner(entry: DisplayEntry): Promise<void> {
   script.type = 'text/javascript';
   script.async = false;
   script.dataset.cfasync = 'false';
-  // COEP require-corp blocks no-cors cross-origin scripts. The publisher
-  // endpoints return Access-Control-Allow-Origin: *, so request CORS mode.
+  // COEP credentialless is required for third-party ad resources. Request CORS
+  // mode for the publisher scripts so failures are observable via load/error.
   script.crossOrigin = 'anonymous';
   script.src = config.scriptSrc;
   script.dataset.wepoAdBanner = config.size;
@@ -537,11 +537,10 @@ let iframePatchUsers = 0;
 let originalCreateElement: typeof document.createElement | null = null;
 
 /**
- * COEP `require-corp` blocks ordinary cross-origin iframes. Ads create their
- * frames with `document.createElement('iframe')`; setting the `credentialless`
- * attribute keeps those frames loading without removing COOP/COEP or breaking
- * SharedArrayBuffer. AdManager installs the patch once while advertising is
- * enabled.
+ * COEP `credentialless` loads third-party creatives and pixels without CORP
+ * headers while keeping cross-origin isolation for SharedArrayBuffer. Some
+ * browsers still require the `credentialless` attribute on ad iframes, so
+ * AdManager installs this patch once while advertising is enabled.
  */
 export function installCredentiallessIframePatch(): () => void {
   if (typeof document === 'undefined') return () => {};

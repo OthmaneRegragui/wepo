@@ -46,8 +46,9 @@ Keep a Changelog, and versions use Semantic Versioning.
 - A global Social Bar mounted once per document outside the routed layouts, so
   direct URL access and SPA navigation no longer suppress or duplicate it.
 - Separate script-load and creative-fill reporting through `data-ad-status` and
-  `data-wepo-ad-served`. Classic display banners and the smartlink remain
-  homepage-only; editor routes keep the Social Bar but render no native or
+  `data-wepo-ad-served`. Classic display banners are mounted from the shared
+  layout on every content route, with an extra content rectangle on the app
+  landing pages; editor routes keep the Social Bar but render no native or
   display slots. Popunder remains disabled pending an official publisher code.
 - Unit tests for detection, ZIP audit, file loading, CSV conversion, download
   fallback and naming, and storage-unavailable behavior.
@@ -58,6 +59,16 @@ Keep a Changelog, and versions use Semantic Versioning.
 
 ### Fixed
 
+- Adsterra's nested `aqml.org` script and CDN creatives are no longer blocked by
+  the production CSP. The script allowlist now covers the publisher, nested ad
+  network and creative hosts.
+- Third-party ad images, tracking pixels and iframes no longer fail CORP checks:
+  the site uses COEP `credentialless` instead of `require-corp`, which keeps
+  cross-origin isolation and `SharedArrayBuffer` available while allowing
+  creatives that omit `Cross-Origin-Resource-Policy` headers.
+- Display advertising now follows the shared layout and appears on every content
+  route, with a responsive top banner and a correctly positioned in-content
+  rectangle on Word, Sheets and Slides landing pages.
 - Sheets and Slides editors stalled because a height-constrained loading
   indicator collapsed the editor workspace before first paint. Editors now
   render at full size behind an absolute overlay, and the Sheets engine uses a

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useMediaQuery } from '../../hooks/use-media-query';
 import {
   DISPLAY_BANNERS,
   isAdFormatEnabled,
@@ -54,5 +55,38 @@ export function DisplayBanner({ placement, size, className, label }: DisplayBann
         style={{ width: config.width, height: config.height, maxWidth: '100%' }}
       />
     </AdSlot>
+  );
+}
+
+export interface ResponsiveDisplayBannerProps {
+  desktopPlacement: AdPlacementId;
+  desktopSize: DisplayBannerSize;
+  mobilePlacement: AdPlacementId;
+  mobileSize: DisplayBannerSize;
+  /** CSS media query that selects the desktop size. */
+  breakpoint?: string;
+  className?: string;
+  label?: string;
+}
+
+/**
+ * Route-level responsive placement. The media query is resolved before the
+ * banner mounts, so only one publisher script and one size ever exist.
+ */
+export function ResponsiveDisplayBanner({
+  desktopPlacement,
+  desktopSize,
+  mobilePlacement,
+  mobileSize,
+  breakpoint = '(min-width: 768px)',
+  className,
+  label,
+}: ResponsiveDisplayBannerProps) {
+  const desktop = useMediaQuery(breakpoint);
+
+  return desktop ? (
+    <DisplayBanner placement={desktopPlacement} size={desktopSize} className={className} label={label} />
+  ) : (
+    <DisplayBanner placement={mobilePlacement} size={mobileSize} className={className} label={label} />
   );
 }

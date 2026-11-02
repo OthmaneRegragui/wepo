@@ -9,6 +9,7 @@ import {
   isAdFormatEnabled,
   isAdPlacementEnabled,
   isAdRoute,
+  isEditorRoute,
   parseAdFlag,
 } from '../../apps/web/src/components/ads/ad-config';
 
@@ -76,37 +77,34 @@ describe('Adsterra configuration', () => {
   it('exposes one enabled placement per requested surface', () => {
     expect(Object.keys(AD_PLACEMENTS).sort()).toEqual(
       [
+        'app-rectangle',
         'dashboard-banner',
-        'home-leaderboard',
-        'home-mobile-banner',
         'home-rectangle',
         'home-sidebar',
         'home-smartlink',
+        'site-leaderboard',
+        'site-mobile-banner',
         'site-native',
         'site-social-bar',
       ].sort(),
     );
-    expect(isAdPlacementEnabled('home-leaderboard')).toBe(true);
+    expect(isAdPlacementEnabled('site-leaderboard')).toBe(true);
+    expect(isAdPlacementEnabled('app-rectangle')).toBe(true);
     expect(isAdFormatEnabled('display-banner')).toBe(true);
     expect(adConfig.formats.smartlink).toBe(true);
   });
 
-  it('scopes homepage display banners and smartlink to the home route', () => {
+  it('allows display placements on content routes and excludes editor routes', () => {
     expect(isAdRoute('/')).toBe(true);
     expect(isAdRoute('//')).toBe(true);
 
-    for (const path of [
-      '/word',
-      '/sheets',
-      '/slides',
-      '/word/edit',
-      '/sheets/edit',
-      '/slides/edit',
-      '/privacy',
-      '/licenses',
-      '/compatibility',
-      '/404',
-    ]) {
+    for (const path of ['/word', '/sheets', '/slides', '/privacy', '/licenses', '/compatibility', '/404']) {
+      expect(isEditorRoute(path), path).toBe(false);
+      expect(isAdRoute(path), path).toBe(true);
+    }
+
+    for (const path of ['/word/edit', '/sheets/edit', '/slides/edit', '/word/edit/']) {
+      expect(isEditorRoute(path), path).toBe(true);
       expect(isAdRoute(path), path).toBe(false);
     }
   });

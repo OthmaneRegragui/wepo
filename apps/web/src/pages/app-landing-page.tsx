@@ -18,6 +18,7 @@ import { OpenFileButton } from '../components/open-file-button';
 import { FileDropZone } from '../components/file-drop-zone';
 import { AppIconTile } from '../components/app-icon';
 import { PrivacyNotice } from '../components/privacy-notice';
+import { DisplayBanner } from '../components/ads/DisplayBanner';
 import { useDocumentLauncher } from '../hooks/use-document-launcher';
 import { cn } from '../lib/utils';
 
@@ -143,6 +144,7 @@ export function AppLandingPage({ kind }: { kind: AppKind }) {
           </div>
 
           <aside className="space-y-5">
+            <DisplayBanner placement="app-rectangle" size="300x250" />
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
               <h2 className="text-base font-semibold text-slate-900">How it stays local</h2>
               <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-600">
