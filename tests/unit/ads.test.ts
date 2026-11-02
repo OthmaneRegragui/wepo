@@ -9,7 +9,6 @@ import {
   isAdFormatEnabled,
   isAdPlacementEnabled,
   isAdRoute,
-  isAdSurfaceAllowed,
   parseAdFlag,
 } from '../../apps/web/src/components/ads/ad-config';
 
@@ -80,10 +79,10 @@ describe('Adsterra configuration', () => {
         'dashboard-banner',
         'home-leaderboard',
         'home-mobile-banner',
-        'home-native',
         'home-rectangle',
         'home-sidebar',
         'home-smartlink',
+        'site-native',
         'site-social-bar',
       ].sort(),
     );
@@ -92,10 +91,9 @@ describe('Adsterra configuration', () => {
     expect(adConfig.formats.smartlink).toBe(true);
   });
 
-  it('allows ads only on the home/dashboard route', () => {
+  it('scopes homepage display banners and smartlink to the home route', () => {
     expect(isAdRoute('/')).toBe(true);
     expect(isAdRoute('//')).toBe(true);
-    expect(isAdSurfaceAllowed('/')).toBe(true);
 
     for (const path of [
       '/word',
@@ -110,7 +108,6 @@ describe('Adsterra configuration', () => {
       '/404',
     ]) {
       expect(isAdRoute(path), path).toBe(false);
-      expect(isAdSurfaceAllowed(path), path).toBe(false);
     }
   });
 

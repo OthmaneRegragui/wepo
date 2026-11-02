@@ -108,21 +108,26 @@ the build image. No backend Worker or API is required.
 
 ## Advertising
 
-Advertising is supplied by Adsterra and is confined to the home/dashboard route
-(`/`). The same React route serves both, so its placements are the union of the
-home and dashboard sets:
+Advertising is supplied by Adsterra and is split between two scopes:
 
-| Placement | Format | Desktop | Mobile |
-|---|---|---|---|
-| Top leaderboard | 728 × 90 | Shown | — |
-| Top banner | 320 × 50 | — | Shown |
-| Dashboard banner | 468 × 60 | Shown at ≥ 640 px | — |
-| Content rectangle | 300 × 250 | Shown | Shown (fits 320 px) |
-| Native banner | Publisher native | Shown | Shown |
-| Desktop sidebar | 160 × 600 | Shown at ≥ 1280 px | — |
-| Desktop sidebar | 160 × 300 | Shown at 1024–1279 px | — |
-| Social Bar | Publisher script | Once per page session | Once per page session |
-| Sponsored offers | Smartlink | Shown | Shown |
+- **Homepage-only** (`/`): classic display banners and the sponsored smartlink.
+- **Shared shell**: the Native Banner on every `SiteLayout` page and the Social
+  Bar once per document lifecycle on every route.
+
+The same React route serves the homepage and dashboard, so its display
+placements are the union of both sets:
+
+| Placement | Scope | Format | Desktop | Mobile |
+|---|---|---|---|---|
+| Top leaderboard | Homepage | 728 × 90 | Shown | — |
+| Top banner | Homepage | 320 × 50 | — | Shown |
+| Dashboard banner | Homepage | 468 × 60 | Shown at ≥ 640 px | — |
+| Content rectangle | Homepage | 300 × 250 | Shown | Shown (fits 320 px) |
+| Native banner | Shared shell | Publisher native | Shown | Shown |
+| Desktop sidebar | Homepage | 160 × 600 | Shown at ≥ 1280 px | — |
+| Desktop sidebar | Homepage | 160 × 300 | Shown at 1024–1279 px | — |
+| Social Bar | Global | Publisher script | Once per document | Once per document |
+| Sponsored offers | Homepage | Smartlink | Shown | Shown |
 
 Only one sidebar size is ever mounted. The media-query selection happens before
 the component mounts, so desktop and mobile scripts never load together.
@@ -134,12 +139,31 @@ start the next banner. Scripts are never loaded concurrently and each key has a
 single container. If a script is blocked or times out, the slot reports a
 non-blocking failure and the rest of the page continues to work.
 
-The Social Bar is initialised at most once per page session. Its injected
-top-level nodes are marked by a mutation observer and hidden by
-`html[data-wepo-ads-suppressed]` whenever the route is not `/`; the loader is
-never invoked on editor, import/export, print, or informational routes. The
-Popunder format is intentionally disabled because no official publisher code
+The Native Banner is mounted once in `SiteLayout`, which covers the homepage,
+application landing pages, privacy, licenses, compatibility, and 404. The loader
+creates one publisher container with the exact `container-<key>` id and runs the
+publisher script only once per document. On SPA navigation the live container is
+moved into the next page's slot; while no eligible slot is mounted it is
+detached from the document rather than concealed on a live page. It is never
+recreated or re-executed, so a filled placement survives route changes and
+duplicate widgets cannot register.
+
+Active editor routes (`/:kind/edit`) do not use `SiteLayout`, so they contain no
+native or display slot. The globally mounted Social Bar remains active there
+because it is a separate publisher format and never covers the editing surface.
+
+The Social Bar is initialised at most once per document lifecycle by
+`AdManager`, outside the routed layouts. Its injected top-level nodes are marked
+by a mutation observer for diagnostics only; they are not hidden or suppressed.
+The Popunder format is intentionally disabled because no official publisher code
 was supplied; the Social Bar script is not reused for it.
+
+Script success and creative fill are tracked separately. `data-ad-status`
+reports loader state (`idle`/`loading`/`loaded`/`failed`), while
+`data-wepo-ad-served="true"` is set only when publisher DOM or text actually
+appears in the container. That flag means the placement was initialized or
+filled; it is not proof that a particular impression was viewed or billed. A
+script returning HTTP 200 does not by itself mark an advertisement as served.
 
 Advertising is disabled at build time by any of these Vite environment flags:
 
@@ -154,7 +178,7 @@ Advertising is disabled at build time by any of these Vite environment flags:
 | `VITE_ADS_PLACEMENT_HOME_MOBILE_BANNER=false` | 320 × 50 |
 | `VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false` | 468 × 60 |
 | `VITE_ADS_PLACEMENT_HOME_RECTANGLE=false` | 300 × 250 |
-| `VITE_ADS_PLACEMENT_HOME_NATIVE=false` | Native banner placement |
+| `VITE_ADS_PLACEMENT_SITE_NATIVE=false` | Native banner placement |
 | `VITE_ADS_PLACEMENT_HOME_SIDEBAR=false` | 160 × 600 / 160 × 300 |
 | `VITE_ADS_PLACEMENT_HOME_SMARTLINK=false` | Sponsored offers |
 | `VITE_ADS_PLACEMENT_SITE_SOCIAL_BAR=false` | Social Bar placement |
@@ -163,11 +187,11 @@ The CSP in `_headers` adds only the three publisher script origins plus
 HTTPS allowances for ad creatives, frames, images, fonts, media, and tracking
 beacons. COOP `same-origin` and COEP `require-corp` remain in place. A scoped
 `document.createElement` patch marks ad-created iframes as `credentialless`
-while an ad surface is mounted, which keeps cross-origin ad frames loading
+while advertising is enabled, which keeps cross-origin ad frames loading
 without weakening cross-origin isolation or breaking `SharedArrayBuffer`.
 
-Adsterra returns empty or no-op scripts to automated/datacenter traffic, so a
-local build can verify sequencing, route gating, CSP, failure handling, and
+Adsterra can return empty or no-op scripts to automated/datacenter traffic, so a
+local build can verify sequencing, route coverage, CSP, failure handling, and
 editor isolation but not real creative fill. Fill depends on Adsterra's
 inventory, the visitor's region, and whether an ad blocker is active. The
 publisher codes and dimensions live in

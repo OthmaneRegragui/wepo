@@ -88,18 +88,6 @@
   min-height: 20rem;
 }
 
-/*
- * Adsterra scripts inject fixed overlays outside the React root. AdManager
- * marks those nodes and sets this flag on every non-home route, including all
- * editor, import/export and informational pages.
- */
-html[data-wepo-ads-suppressed] [data-wepo-ad-node],
-html[data-wepo-ads-suppressed] [data-wepo-ad-slot] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
 @media print {
   .no-print {
     display: none !important;

@@ -4,7 +4,7 @@ import {
   DISPLAY_BANNERS,
   isAdFormatEnabled,
   isAdPlacementEnabled,
-  isAdSurfaceAllowed,
+  isAdRoute,
   type AdPlacementId,
   type DisplayBannerSize,
 } from './ad-config';
@@ -28,7 +28,7 @@ export function DisplayBanner({ placement, size, className, label }: DisplayBann
   const enabled =
     isAdFormatEnabled('display-banner') &&
     isAdPlacementEnabled(placement) &&
-    isAdSurfaceAllowed(pathname);
+    isAdRoute(pathname);
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<AdStatus>('idle');
 

@@ -14,7 +14,7 @@
  *   VITE_ADS_PLACEMENT_HOME_MOBILE_BANNER=false
  *   VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false
  *   VITE_ADS_PLACEMENT_HOME_RECTANGLE=false
- *   VITE_ADS_PLACEMENT_HOME_NATIVE=false
+ *   VITE_ADS_PLACEMENT_SITE_NATIVE=false
  *   VITE_ADS_PLACEMENT_HOME_SIDEBAR=false
  *   VITE_ADS_PLACEMENT_HOME_SMARTLINK=false
  *   VITE_ADS_PLACEMENT_SITE_SOCIAL_BAR=false
@@ -27,7 +27,7 @@ export type AdPlacementId =
   | 'home-mobile-banner'
   | 'dashboard-banner'
   | 'home-rectangle'
-  | 'home-native'
+  | 'site-native'
   | 'home-sidebar'
   | 'home-smartlink'
   | 'site-social-bar';
@@ -147,7 +147,7 @@ const placementDefinitions: ReadonlyArray<Omit<AdPlacementConfig, 'enabled'>> = 
   { id: 'home-mobile-banner', format: 'display-banner', label: '320 × 50 mobile banner' },
   { id: 'dashboard-banner', format: 'display-banner', label: '468 × 60 dashboard banner' },
   { id: 'home-rectangle', format: 'display-banner', label: '300 × 250 rectangle' },
-  { id: 'home-native', format: 'native-banner', label: 'Native banner' },
+  { id: 'site-native', format: 'native-banner', label: 'Native banner' },
   { id: 'home-sidebar', format: 'display-banner', label: 'Desktop sidebar banner' },
   { id: 'home-smartlink', format: 'smartlink', label: 'Sponsored offers' },
   { id: 'site-social-bar', format: 'social-bar', label: 'Social bar' },
@@ -171,7 +171,10 @@ export const adConfig = {
   },
 } as const;
 
-/** Ads are only allowed on the home/dashboard route. Editors never qualify. */
+/**
+ * Homepage-only placements. Display banners and the smartlink are intentionally
+ * scoped to `/`; the native banner and Social Bar live in the shared shell.
+ */
 export function isAdRoute(pathname: string): boolean {
   const normalized = pathname.replace(/\/+$/, '') || '/';
   return normalized === '/';
@@ -183,9 +186,4 @@ export function isAdPlacementEnabled(id: AdPlacementId): boolean {
 
 export function isAdFormatEnabled(format: AdFormat): boolean {
   return adConfig.enabled && adConfig.formats[format];
-}
-
-/** Shared by the UI and the loader so both agree on the same route guard. */
-export function isAdSurfaceAllowed(pathname: string): boolean {
-  return adConfig.enabled && isAdRoute(pathname);
 }

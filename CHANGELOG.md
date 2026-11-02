@@ -34,15 +34,21 @@ Keep a Changelog, and versions use Semantic Versioning.
 - Cloudflare Workers Static Assets deployment through `wrangler.jsonc` and
   Wrangler 4, with the SPA fallback configured in Wrangler. `.nvmrc` pins the
   Node version used by Workers Builds.
-- Adsterra advertising on the home/dashboard route: exact Social Bar, native
-  banner, smartlink, and six display-banner publisher codes; serial
-  `atOptions` loading; responsive desktop/mobile/sidebar placement selection;
-  build-time format and placement flags; duplicate prevention; graceful
-  failure handling; and a scoped `credentialless` iframe bridge that preserves
-  COOP/COEP and `SharedArrayBuffer`.
-- Route-gated ad suppression that hides Social Bar nodes on editor, print,
-  import/export, and informational routes. Popunder remains disabled pending an
-  official publisher code.
+- Adsterra advertising: exact Social Bar and native-banner publisher codes plus
+  six display-banner codes; serial `atOptions` loading; responsive
+  desktop/mobile/sidebar placement selection; build-time format and placement
+  flags; duplicate prevention; graceful failure handling; and a scoped
+  `credentialless` iframe bridge that preserves COOP/COEP and
+  `SharedArrayBuffer`.
+- A single native-banner container shared by every `SiteLayout` page. The live
+  container moves between SPA slots (and is detached, not hidden, between
+  eligible routes) instead of re-running the publisher script.
+- A global Social Bar mounted once per document outside the routed layouts, so
+  direct URL access and SPA navigation no longer suppress or duplicate it.
+- Separate script-load and creative-fill reporting through `data-ad-status` and
+  `data-wepo-ad-served`. Classic display banners and the smartlink remain
+  homepage-only; editor routes keep the Social Bar but render no native or
+  display slots. Popunder remains disabled pending an official publisher code.
 - Unit tests for detection, ZIP audit, file loading, CSV conversion, download
   fallback and naming, and storage-unavailable behavior.
 - Playwright end-to-end tests for navigation, Word/Sheets/Slides opening,

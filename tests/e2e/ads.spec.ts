@@ -54,7 +54,10 @@ async function installAdStubs(page: Page): Promise<void> {
           var container = document.getElementById('container-01172eeac3fec1aa2688cd2353c20091');
           if (container) {
             container.dataset.nativeLoaded = 'true';
-            container.textContent = 'Test native ad';
+            var marker = document.createElement('div');
+            marker.className = 'wepo-test-native';
+            marker.textContent = 'Test native ad';
+            container.appendChild(marker);
           }
         `,
       });
@@ -119,7 +122,9 @@ test('desktop home loads every classic banner sequentially with the exact option
   expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
   expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
   await expect(page.locator('[data-wepo-native-container]')).toHaveAttribute('data-native-loaded', 'true');
+  await expect(page.locator('[data-wepo-native-container]')).toHaveAttribute('data-wepo-ad-served', 'true');
   await expect(page.locator('[data-wepo-ad-slot][data-ad-status="loaded"]')).toHaveCount(5);
+  await expect(page.locator('.wepo-ad-container[data-wepo-ad-served="true"]')).toHaveCount(4);
 
   const smartlink = page.locator('[data-wepo-smartlink]');
   await expect(smartlink).toHaveAttribute('target', '_blank');
@@ -153,39 +158,111 @@ test.describe('mobile', () => {
 
     expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
     expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
+    await expect(page.locator('[data-wepo-native-container]')).toHaveAttribute('data-native-loaded', 'true');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   });
 });
 
-test('Social Bar is initialised once and hidden as soon as the route leaves the dashboard', async ({ page }) => {
+test('Social Bar loads once and stays active on every route', async ({ page }) => {
   await installAdStubs(page);
   await page.goto('/');
   await expect.poll(async () => page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
+  await expect.poll(async () => page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
 
   const overlay = page.locator('#wepo-test-social-overlay');
   await expect(overlay).toBeVisible();
+  await expect(page.locator('html')).not.toHaveAttribute('data-wepo-ads-suppressed', 'true');
 
   await page.locator('footer').getByRole('link', { name: 'Privacy' }).click();
   await expect(page).toHaveURL(/\/privacy$/);
-  await expect(page.locator('html')).toHaveAttribute('data-wepo-ads-suppressed', 'true');
-  await expect(overlay).toBeHidden();
-  await expect(page.locator('[data-wepo-ad-slot]')).toHaveCount(0);
+  await expect(overlay).toBeVisible();
+  await expect(page.locator('html')).not.toHaveAttribute('data-wepo-ads-suppressed', 'true');
+  await expect(page.locator('[data-wepo-native-slot]')).toHaveCount(1);
+  await expect(page.locator('[data-wepo-native-container]')).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
   expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
 
   await page.getByRole('banner').getByRole('link', { name: 'Wepo Office home' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.locator('html')).not.toHaveAttribute('data-wepo-ads-suppressed', 'true');
   await expect(overlay).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
+  expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
+
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Word' }).click();
+  await expect(page).toHaveURL(/\/word$/);
+  await expect(overlay).toBeVisible();
+  await expect(page.locator('[data-wepo-native-slot]')).toHaveCount(1);
+  expect(await page.locator('script[data-wepo-social-bar]').count()).toBe(1);
+  expect(await page.locator('script[data-wepo-native-key]').count()).toBe(1);
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
   expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
 });
 
-test('editor routes load no ad scripts and keep cross-origin isolation', async ({ page }) => {
+test('native banner container survives SPA navigation without re-running its script', async ({ page }) => {
+  await installAdStubs(page);
+  await page.goto('/word');
+  await expect(page.locator('[data-wepo-native-container][data-native-loaded="true"]')).toHaveCount(1);
+  await page.evaluate(() => {
+    (window as Window & { __nativeHost?: HTMLElement }).__nativeHost = document.querySelector<HTMLElement>(
+      '[data-wepo-native-container]',
+    ) ?? undefined;
+  });
+
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Sheets' }).click();
+  await expect(page).toHaveURL(/\/sheets$/);
+  await expect(page.locator('[data-wepo-native-slot] [data-wepo-native-container]')).toHaveCount(1);
+  await expect(page.locator('[data-wepo-native-container]')).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
+  expect(
+    await page.evaluate(() => {
+      const host = document.querySelector('[data-wepo-native-container]');
+      return Boolean(host && host === (window as Window & { __nativeHost?: HTMLElement }).__nativeHost);
+    }),
+  ).toBe(true);
+  expect(await page.locator('script[data-wepo-native-key]').count()).toBe(1);
+
+  await page.getByRole('banner').getByRole('link', { name: 'Wepo Office home' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('[data-wepo-native-slot] [data-wepo-native-container]')).toHaveCount(1);
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
+  expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
+});
+
+test.describe('eligible route coverage', () => {
+  for (const path of ['/', '/word', '/sheets', '/slides', '/privacy', '/licenses', '/compatibility', '/404']) {
+    test(`${path} has the global Social Bar and exactly one native placement`, async ({ page }) => {
+      await installAdStubs(page);
+      await page.goto(path);
+
+      await expect(page.locator('#wepo-test-social-overlay')).toBeVisible();
+      await expect(page.locator('[data-wepo-native-slot]')).toHaveCount(1);
+      await expect(page.locator('[data-wepo-native-container][data-native-loaded="true"]')).toHaveCount(1);
+      await expect(page.locator('[data-wepo-ad-slot]').first()).toBeVisible();
+
+      expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
+      expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBe(1);
+      expect(await page.locator('script[data-wepo-social-bar]').count()).toBe(1);
+      expect(await page.locator('script[data-wepo-native-key]').count()).toBe(1);
+
+      if (path !== '/') {
+        expect(await page.locator('script[data-wepo-ad-key]').count()).toBe(0);
+      }
+    });
+  }
+});
+
+test('editor routes keep the global Social Bar but load no native or display placements', async ({ page }) => {
   await installAdStubs(page);
   await page.goto('/word/edit');
   await expect(page).toHaveURL(/\/word\/edit/);
 
+  await expect(page.locator('#wepo-test-social-overlay')).toBeVisible();
   await expect(page.locator('[data-wepo-ad-slot]')).toHaveCount(0);
-  expect(await page.locator('script[data-wepo-ad-key], script[data-wepo-native-key], script[data-wepo-social-bar]').count()).toBe(0);
+  await expect(page.locator('[data-wepo-native-container]')).toHaveCount(0);
+  expect(await page.locator('script[data-wepo-ad-key], script[data-wepo-native-key]').count()).toBe(0);
+  expect(await page.locator('script[data-wepo-social-bar]').count()).toBe(1);
+  expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBeUndefined();
+  expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
   expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
 });
 

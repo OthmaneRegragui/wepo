@@ -50,6 +50,34 @@ function notify(listeners: Set<StatusListener>, status: AdStatus): void {
   for (const listener of listeners) listener(status);
 }
 
+/**
+ * Script load and ad fill are different events. A publisher script can return
+ * 200 and still leave the container empty (no inventory, blocker, bot filter),
+ * so record fill separately from the loader status.
+ */
+function hasAdContent(container: HTMLElement): boolean {
+  return Array.from(container.childNodes).some((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE) return (node as Element).tagName !== 'SCRIPT';
+    if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? '').trim().length > 0;
+    return false;
+  });
+}
+
+function markAdServed(container: HTMLElement, served: boolean): void {
+  if (served) container.dataset.wepoAdServed = 'true';
+  else delete container.dataset.wepoAdServed;
+}
+
+/** Watch a container for publisher content and record fill independently. */
+function watchForAdFill(container: HTMLElement): () => void {
+  const update = () => markAdServed(container, hasAdContent(container));
+  update();
+  if (typeof MutationObserver === 'undefined') return () => {};
+  const observer = new MutationObserver(update);
+  observer.observe(container, { childList: true, subtree: true });
+  return () => observer.disconnect();
+}
+
 /* ------------------------------------------------------------------ */
 /* Classic display banners                                             */
 /* ------------------------------------------------------------------ */
@@ -65,6 +93,7 @@ interface DisplayEntry {
   options: AtOptions | null;
   cancelScriptWait: (() => void) | null;
   destroyTimer: number | null;
+  servedWatcher: (() => void) | null;
 }
 
 const displayEntries = new WeakMap<HTMLElement, DisplayEntry>();
@@ -112,6 +141,7 @@ async function runDisplayBanner(entry: DisplayEntry): Promise<void> {
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.async = false;
+  script.dataset.cfasync = 'false';
   // COEP require-corp blocks no-cors cross-origin scripts. The publisher
   // endpoints return Access-Control-Allow-Origin: *, so request CORS mode.
   script.crossOrigin = 'anonymous';
@@ -159,6 +189,7 @@ async function runDisplayBanner(entry: DisplayEntry): Promise<void> {
   }
 
   updateDisplayStatus(entry, 'loaded');
+  entry.servedWatcher = watchForAdFill(container);
 
   // Let the script finish reading atOptions and inserting its iframe before
   // the next banner is allowed to overwrite the global.
@@ -175,6 +206,8 @@ function scheduleDisplayBanner(entry: DisplayEntry): void {
 
 function destroyDisplayEntry(entry: DisplayEntry): void {
   entry.cancelled = true;
+  entry.servedWatcher?.();
+  entry.servedWatcher = null;
   entry.cancelScriptWait?.();
   entry.cancelScriptWait = null;
   releaseOptions(entry);
@@ -182,6 +215,7 @@ function destroyDisplayEntry(entry: DisplayEntry): void {
   entry.script = null;
   entry.container.replaceChildren();
   delete entry.container.dataset.wepoAdStatus;
+  delete entry.container.dataset.wepoAdServed;
 }
 
 /**
@@ -214,6 +248,7 @@ export function mountDisplayBanner(
       options: null,
       cancelScriptWait: null,
       destroyTimer: null,
+      servedWatcher: null,
     };
     displayEntries.set(container, entry);
     scheduleDisplayBanner(entry);
@@ -248,29 +283,83 @@ export function mountDisplayBanner(
 /* Native banner                                                       */
 /* ------------------------------------------------------------------ */
 
-interface NativeEntry {
-  container: HTMLElement;
-  listeners: Set<StatusListener>;
-  status: AdStatus;
+interface NativeState {
+  host: HTMLElement | null;
+  activeSlot: HTMLElement | null;
   script: HTMLScriptElement | null;
+  scriptStarted: boolean;
+  status: AdStatus;
+  served: boolean;
+  listeners: Set<StatusListener>;
   cancelScriptWait: (() => void) | null;
-  destroyTimer: number | null;
-  cancelled: boolean;
+  servedWatcher: (() => void) | null;
+  releaseTimer: number | null;
 }
 
-const nativeEntries = new WeakMap<HTMLElement, NativeEntry>();
+const nativeState: NativeState = {
+  host: null,
+  activeSlot: null,
+  script: null,
+  scriptStarted: false,
+  status: 'idle',
+  served: false,
+  listeners: new Set(),
+  cancelScriptWait: null,
+  servedWatcher: null,
+  releaseTimer: null,
+};
 
-function updateNativeStatus(entry: NativeEntry, status: AdStatus): void {
-  entry.status = status;
-  setContainerStatus(entry.container, status);
-  notify(entry.listeners, status);
+function updateNativeStatus(status: AdStatus): void {
+  nativeState.status = status;
+  if (nativeState.host) setContainerStatus(nativeState.host, status);
+  notify(nativeState.listeners, status);
 }
 
-async function runNativeBanner(entry: NativeEntry): Promise<void> {
-  if (entry.cancelled || !entry.container.isConnected) return;
+function updateNativeServed(): void {
+  const { host, activeSlot } = nativeState;
+  if (!host) return;
+  nativeState.served = hasAdContent(host);
+  markAdServed(host, nativeState.served);
+  if (activeSlot) markAdServed(activeSlot, nativeState.served);
+}
 
-  updateNativeStatus(entry, 'loading');
-  entry.container.replaceChildren();
+function watchNativeFill(): void {
+  if (nativeState.servedWatcher || !nativeState.host) return;
+  updateNativeServed();
+  if (typeof MutationObserver === 'undefined') return;
+  const observer = new MutationObserver(updateNativeServed);
+  observer.observe(nativeState.host, { childList: true, subtree: true });
+  nativeState.servedWatcher = () => observer.disconnect();
+}
+
+/**
+ * The publisher requires one container with the exact `container-<key>` id.
+ * The live container is detached (not parked in a hidden live page) while no
+ * eligible slot is mounted, so an editor route never hosts a concealed ad. The
+ * same node is re-attached on the next eligible page, preserving any filled
+ * creative without re-running the script.
+ */
+function ensureNativeHost(): HTMLElement {
+  // Never create a second host: if React removed the previous slot, the same
+  // node is simply re-attached to the next slot.
+  if (nativeState.host) return nativeState.host;
+
+  const host = document.createElement('div');
+  host.id = NATIVE_BANNER.containerId;
+  host.className = 'wepo-native-container w-full';
+  host.dataset.wepoNativeContainer = NATIVE_BANNER.key;
+  host.style.width = '100%';
+  host.style.minHeight = '250px';
+
+  nativeState.host = host;
+  watchNativeFill();
+  return host;
+}
+
+function startNativeScript(): void {
+  if (nativeState.scriptStarted || !nativeState.host) return;
+  nativeState.scriptStarted = true;
+  updateNativeStatus('loading');
 
   const script = document.createElement('script');
   script.async = true;
@@ -278,7 +367,7 @@ async function runNativeBanner(entry: NativeEntry): Promise<void> {
   script.dataset.cfasync = 'false';
   script.dataset.wepoNativeKey = NATIVE_BANNER.key;
   script.src = NATIVE_BANNER.scriptSrc;
-  entry.script = script;
+  nativeState.script = script;
 
   const result = new Promise<boolean>((resolve) => {
     let settled = false;
@@ -293,79 +382,67 @@ async function runNativeBanner(entry: NativeEntry): Promise<void> {
     const onLoad = () => finish(true);
     const onError = () => finish(false);
     const timeout = window.setTimeout(() => finish(false), NATIVE_SCRIPT_TIMEOUT_MS);
-    entry.cancelScriptWait = () => finish(false);
+    nativeState.cancelScriptWait = () => finish(false);
     script.addEventListener('load', onLoad, { once: true });
     script.addEventListener('error', onError, { once: true });
   });
 
-  entry.container.appendChild(script);
+  nativeState.host.appendChild(script);
 
-  const loaded = await result;
-  entry.cancelScriptWait = null;
-
-  if (entry.cancelled) {
-    script.remove();
-    return;
-  }
-
-  if (!loaded) {
-    script.remove();
-    updateNativeStatus(entry, 'failed');
-    return;
-  }
-
-  updateNativeStatus(entry, 'loaded');
+  void result.then((loaded) => {
+    nativeState.cancelScriptWait = null;
+    if (!loaded) {
+      script.remove();
+      updateNativeStatus('failed');
+      return;
+    }
+    updateNativeStatus('loaded');
+    watchNativeFill();
+  });
 }
 
-function destroyNativeEntry(entry: NativeEntry): void {
-  entry.cancelled = true;
-  entry.cancelScriptWait?.();
-  entry.cancelScriptWait = null;
-  entry.script?.remove();
-  entry.script = null;
-  entry.container.replaceChildren();
-  delete entry.container.dataset.wepoAdStatus;
-}
-
-/** Mount the native banner script after its dedicated container is in the DOM. */
-export function mountNativeBanner(container: HTMLElement, listener?: StatusListener): () => void {
-  let entry = nativeEntries.get(container);
-
-  if (!entry) {
-    entry = {
-      container,
-      listeners: new Set(),
-      status: 'idle',
-      script: null,
-      cancelScriptWait: null,
-      destroyTimer: null,
-      cancelled: false,
-    };
-    nativeEntries.set(container, entry);
-    void runNativeBanner(entry);
+/**
+ * Attach the singleton native banner container to a page slot. The returned
+ * cleanup only detaches listeners; the host itself is detached until the next
+ * eligible page mounts, so SPA navigation never reloads or duplicates the
+ * publisher script and editor routes never host a concealed placement.
+ */
+export function attachNativeBanner(slot: HTMLElement, listener?: StatusListener): () => void {
+  if (nativeState.releaseTimer !== null) {
+    window.clearTimeout(nativeState.releaseTimer);
+    nativeState.releaseTimer = null;
   }
 
-  if (entry.destroyTimer !== null) {
-    window.clearTimeout(entry.destroyTimer);
-    entry.destroyTimer = null;
-  }
+  const host = ensureNativeHost();
+  if (host.parentElement !== slot) slot.appendChild(host);
+  startNativeScript();
+
+  nativeState.activeSlot = slot;
+  if (nativeState.served) markAdServed(slot, true);
+  else delete slot.dataset.wepoAdServed;
 
   if (listener) {
-    entry.listeners.add(listener);
-    listener(entry.status);
+    nativeState.listeners.add(listener);
+    listener(nativeState.status);
   }
 
   let cleanedUp = false;
   return () => {
     if (cleanedUp) return;
     cleanedUp = true;
-    if (listener) entry.listeners.delete(listener);
-    if (entry.destroyTimer !== null) return;
-    entry.destroyTimer = window.setTimeout(() => {
-      entry.destroyTimer = null;
-      if (nativeEntries.get(container) !== entry) return;
-      nativeEntries.delete(container);
-      destroyNativeEntry(entry);
+    if (listener) nativeState.listeners.delete(listener);
+    if (nativeState.listeners.size > 0 || nativeState.releaseTimer !== null) return;
+
+    // Defer detaching so React StrictMode's immediate remount (and route
+    // transitions where the next slot mounts in the same commit) can keep the
+    // host where it is.
+    nativeState.releaseTimer = window.setTimeout(() => {
+      nativeState.releaseTimer = null;
+      if (nativeState.listeners.size > 0) return;
+      const current = nativeState.host;
+      if (!current) return;
+      nativeState.activeSlot = null;
+      current.remove();
     }, 0);
   };
 }
@@ -386,8 +463,8 @@ function updateSocialStatus(status: AdStatus): void {
 
 /**
  * Social Bar scripts inject fixed-position nodes directly into <body>. Mark
- * those nodes so the editor-route CSS guard can hide them immediately when the
- * user navigates from the home page into an editor.
+ * those nodes for diagnostics so tests and devtools can tell publisher DOM
+ * apart from React output. Marking never hides or blocks them.
  */
 function installAdNodeObserver(): void {
   if (adNodeObserverInstalled || typeof MutationObserver === 'undefined') return;
@@ -410,9 +487,9 @@ function installAdNodeObserver(): void {
 }
 
 /**
- * Load the Social Bar at most once per page session. Callers may unmount and
- * remount during SPA navigation; the module flag and the DOM script check keep
- * a second copy from being initialized.
+ * Load the Social Bar at most once per document lifecycle. Callers may unmount
+ * and remount during SPA navigation; the module flag and the DOM script check
+ * keep a second copy from being initialized.
  */
 export function ensureSocialBar(listener?: StatusListener): () => void {
   if (listener) {
@@ -463,7 +540,8 @@ let originalCreateElement: typeof document.createElement | null = null;
  * COEP `require-corp` blocks ordinary cross-origin iframes. Ads create their
  * frames with `document.createElement('iframe')`; setting the `credentialless`
  * attribute keeps those frames loading without removing COOP/COEP or breaking
- * SharedArrayBuffer. The patch exists only while an ad surface is mounted.
+ * SharedArrayBuffer. AdManager installs the patch once while advertising is
+ * enabled.
  */
 export function installCredentiallessIframePatch(): () => void {
   if (typeof document === 'undefined') return () => {};

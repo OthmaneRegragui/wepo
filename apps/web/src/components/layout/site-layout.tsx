@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { NativeBanner } from '../ads/NativeBanner';
 import { SiteHeader } from './site-header';
 import { SiteFooter } from './site-footer';
 
@@ -19,6 +20,9 @@ export function SiteLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <div className="container-page py-8">
+        <NativeBanner placement="site-native" />
+      </div>
       <SiteFooter />
     </div>
   );

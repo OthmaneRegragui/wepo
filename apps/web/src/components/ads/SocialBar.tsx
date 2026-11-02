@@ -1,19 +1,15 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { isAdFormatEnabled, isAdPlacementEnabled, isAdSurfaceAllowed } from './ad-config';
+import { isAdFormatEnabled, isAdPlacementEnabled } from './ad-config';
 import { ensureSocialBar } from './ad-loader';
 
 /**
- * The Social Bar has no React-rendered UI. This component only loads it on an
- * allowed route (home/dashboard) and relies on the module-level loader to keep
- * initialization to once per page session.
+ * The Social Bar has no React-rendered UI. AdManager mounts this component once
+ * for the whole application shell, so it is available on every route, including
+ * direct links into an editor. The module-level loader guarantees a single
+ * script for the lifetime of the document.
  */
 export function SocialBar() {
-  const { pathname } = useLocation();
-  const enabled =
-    isAdFormatEnabled('social-bar') &&
-    isAdPlacementEnabled('site-social-bar') &&
-    isAdSurfaceAllowed(pathname);
+  const enabled = isAdFormatEnabled('social-bar') && isAdPlacementEnabled('site-social-bar');
 
   useEffect(() => {
     if (!enabled) return;

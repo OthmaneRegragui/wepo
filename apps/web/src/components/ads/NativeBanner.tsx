@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import {
-  NATIVE_BANNER,
-  isAdFormatEnabled,
-  isAdPlacementEnabled,
-  isAdSurfaceAllowed,
-  type AdPlacementId,
-} from './ad-config';
-import { mountNativeBanner, type AdStatus } from './ad-loader';
+import { isAdFormatEnabled, isAdPlacementEnabled, type AdPlacementId } from './ad-config';
+import { attachNativeBanner, type AdStatus } from './ad-loader';
 import { AdSlot } from './ad-slot';
 
 export interface NativeBannerProps {
@@ -17,34 +10,31 @@ export interface NativeBannerProps {
 }
 
 /**
- * Adsterra native banner. The script is appended only after the dedicated
- * container with the publisher-provided id is mounted.
+ * Adsterra native banner. The loader owns a single publisher container and
+ * moves that live container into whichever page slot is active. Moving the
+ * existing DOM (instead of re-running the script) is what keeps a filled banner
+ * alive across SPA route changes without duplicate scripts.
  */
-export function NativeBanner({ placement = 'home-native', className, label }: NativeBannerProps) {
-  const { pathname } = useLocation();
-  const enabled =
-    isAdFormatEnabled('native-banner') &&
-    isAdPlacementEnabled(placement) &&
-    isAdSurfaceAllowed(pathname);
-  const containerRef = useRef<HTMLDivElement>(null);
+export function NativeBanner({ placement = 'site-native', className, label }: NativeBannerProps) {
+  const enabled = isAdFormatEnabled('native-banner') && isAdPlacementEnabled(placement);
+  const slotRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<AdStatus>('idle');
 
   useEffect(() => {
     if (!enabled) return;
-    const container = containerRef.current;
-    if (!container) return;
-    return mountNativeBanner(container, setStatus);
-  }, [enabled]);
+    const slot = slotRef.current;
+    if (!slot) return;
+    return attachNativeBanner(slot, setStatus);
+  }, [enabled, placement]);
 
   if (!enabled) return null;
 
   return (
     <AdSlot className={className} label={label ?? 'Advertisement · Native'} status={status}>
       <div
-        ref={containerRef}
-        id={NATIVE_BANNER.containerId}
-        className="wepo-native-container w-full"
-        data-wepo-native-container={NATIVE_BANNER.key}
+        ref={slotRef}
+        className="wepo-native-slot w-full"
+        data-wepo-native-slot={placement}
         style={{ minHeight: 250 }}
       />
     </AdSlot>

@@ -4,7 +4,7 @@ import {
   SMARTLINK,
   isAdFormatEnabled,
   isAdPlacementEnabled,
-  isAdSurfaceAllowed,
+  isAdRoute,
   type AdPlacementId,
 } from './ad-config';
 import { cn } from '../../lib/utils';
@@ -23,7 +23,7 @@ export function SponsoredOffers({ placement = 'home-smartlink', className }: Spo
   const enabled =
     isAdFormatEnabled('smartlink') &&
     isAdPlacementEnabled(placement) &&
-    isAdSurfaceAllowed(pathname);
+    isAdRoute(pathname);
 
   if (!enabled) return null;
 

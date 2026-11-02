@@ -11,7 +11,6 @@ import { AppIconTile } from '../components/app-icon';
 import { PrivacyNotice } from '../components/privacy-notice';
 import { RecentDocuments } from '../components/recent-documents';
 import { DisplayBanner } from '../components/ads/DisplayBanner';
-import { NativeBanner } from '../components/ads/NativeBanner';
 import { SponsoredOffers } from '../components/ads/SmartLink';
 import { useDocumentLauncher } from '../hooks/use-document-launcher';
 import { useMediaQuery } from '../hooks/use-media-query';
@@ -159,12 +158,6 @@ export function DashboardPage() {
             <DisplayBanner placement="dashboard-banner" size="468x60" />
           </div>
         ) : null}
-      </section>
-
-      <section className="border-y border-slate-200/70 bg-slate-50/60 py-8" aria-label="Sponsored native placement">
-        <div className="container-page">
-          <NativeBanner />
-        </div>
       </section>
 
       <section className="border-y border-slate-200/70 bg-white/70 py-14">

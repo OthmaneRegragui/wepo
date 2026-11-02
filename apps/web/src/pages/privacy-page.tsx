@@ -37,9 +37,9 @@ const sections = [
   {
     title: 'Advertising and third parties',
     body: [
-      'The home/dashboard route (/) displays advertising supplied by Adsterra: classic display banners, a native banner, a social bar and a clearly labelled sponsored smartlink. These placements are part of this build and can be disabled at build time with the VITE_ADS_* flags documented in the README.',
+      'The home/dashboard route (/) displays classic display banners and a clearly labelled sponsored smartlink supplied by Adsterra. A native banner is shown in the shared page layout, which covers the homepage, Word, Sheets and Slides landing pages, and informational pages. A social bar is initialised once per page load across the site. These placements are part of this build and can be disabled at build time with the VITE_ADS_* flags documented in the README.',
       'Adsterra and its advertising partners are third parties. Their scripts may set cookies, local storage or device identifiers and may request creatives and tracking pixels from their own domains under their own policies. Wepo does not pass document contents, file names or extracted text to those scripts; the ad system has no access to the document store.',
-      'Advertising scripts are never loaded or rendered inside the Word, Sheets or Slides editors, print/PDF flows, file import/export flows, toolbars, dialogs or document canvases. A social bar that was already initialised on the home route is hidden and made non-interactive when you navigate to any other route.',
+      'Display and native advertising slots are never rendered inside the Word, Sheets or Slides editors, print/PDF flows, file import/export flows, toolbars, dialogs or document canvases. The Social Bar is a separate global publisher format and may remain visible while an editor is open, but it does not cover the editing surface and has no access to document data. You can block or limit advertising with your browser or an extension; Wepo does not bypass those controls.',
     ],
   },
   {
@@ -60,7 +60,7 @@ export function PrivacyPage() {
   useSeo({
     title: 'Privacy — Wepo Office',
     description:
-      'How Wepo keeps documents on your device: local IndexedDB recovery, no uploads, no document analytics and no advertising inside the editor.',
+      'How Wepo keeps documents on your device: local IndexedDB recovery, no uploads, no document analytics and no display or native ads inside the editor.',
     path: '/privacy',
   });
 
