@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { AdManager } from './components/ads/AdManager';
 import { SiteLayout } from './components/layout/site-layout';
 import { EditorLoading } from './components/ui/spinner';
 import { DashboardPage } from './pages/dashboard-page';
@@ -25,19 +26,22 @@ function lazyPage(page: React.ReactNode) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<SiteLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="/word" element={lazyPage(<AppLandingPage kind="word" />)} />
-        <Route path="/sheets" element={lazyPage(<AppLandingPage kind="sheets" />)} />
-        <Route path="/slides" element={lazyPage(<AppLandingPage kind="slides" />)} />
-        <Route path="/privacy" element={lazyPage(<PrivacyPage />)} />
-        <Route path="/licenses" element={lazyPage(<LicensesPage />)} />
-        <Route path="/compatibility" element={lazyPage(<CompatibilityPage />)} />
-        <Route path="/404" element={lazyPage(<NotFoundPage />)} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Route>
-      <Route path="/:kind/edit" element={<EditorPage />} />
-    </Routes>
+    <>
+      <AdManager />
+      <Routes>
+        <Route element={<SiteLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="/word" element={lazyPage(<AppLandingPage kind="word" />)} />
+          <Route path="/sheets" element={lazyPage(<AppLandingPage kind="sheets" />)} />
+          <Route path="/slides" element={lazyPage(<AppLandingPage kind="slides" />)} />
+          <Route path="/privacy" element={lazyPage(<PrivacyPage />)} />
+          <Route path="/licenses" element={lazyPage(<LicensesPage />)} />
+          <Route path="/compatibility" element={lazyPage(<CompatibilityPage />)} />
+          <Route path="/404" element={lazyPage(<NotFoundPage />)} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Route>
+        <Route path="/:kind/edit" element={<EditorPage />} />
+      </Routes>
+    </>
   );
 }

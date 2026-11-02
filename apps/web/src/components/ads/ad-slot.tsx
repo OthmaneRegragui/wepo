@@ -1,74 +1,39 @@
-import { useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '../../lib/utils';
-
-declare global {
-  interface Window {
-    adsbygoogle?: unknown[];
-  }
-}
+import type { AdStatus } from './ad-loader';
 
 export interface AdSlotProps {
-  slot?: string;
-  format?: 'auto' | 'rectangle' | 'horizontal';
   className?: string;
   label?: string;
+  status?: AdStatus;
+  children?: ReactNode;
 }
 
 /**
- * Advertisement placement used only on informational pages. The editor routes
- * never render this component. Without a configured publisher and slot, the
- * space stays an honest placeholder instead of loading a third-party script.
+ * Shared chrome for an ad placement. The slot itself never loads a script;
+ * DisplayBanner/NativeBanner own the loader and report status here.
  */
-export function AdSlot({ slot, format = 'auto', className, label = 'Advertisement' }: AdSlotProps) {
-  const client = import.meta.env.VITE_ADSENSE_CLIENT as string | undefined;
-  const configuredSlot = slot ?? (import.meta.env.VITE_ADSENSE_SLOT as string | undefined);
-  const insRef = useRef<HTMLModElement>(null);
-  const enabled = Boolean(client && configuredSlot);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const scriptId = 'wepo-adsense';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.async = true;
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client!)}`;
-      script.crossOrigin = 'anonymous';
-      document.head.appendChild(script);
-    }
-    try {
-      window.adsbygoogle = window.adsbygoogle ?? [];
-      window.adsbygoogle.push({});
-    } catch {
-      // The slot stays empty if an ad blocker prevents the script.
-    }
-  }, [enabled, client]);
-
+export function AdSlot({ className, label = 'Advertisement', status = 'idle', children }: AdSlotProps) {
   return (
     <aside
-      className={cn('overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50/60', className)}
-      aria-label="Advertisement"
-      data-ad-slot={enabled ? configuredSlot : 'placeholder'}
-    >
-      <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
-        <span className="text-[10px] text-slate-400">Does not run in editors</span>
-      </div>
-      {enabled ? (
-        <ins
-          ref={insRef}
-          className="adsbygoogle block"
-          style={{ display: 'block' }}
-          data-ad-client={client}
-          data-ad-slot={configuredSlot}
-          data-ad-format={format}
-          data-full-width-responsive="true"
-        />
-      ) : (
-        <div className="flex min-h-[90px] items-center justify-center p-6 text-center text-xs leading-5 text-slate-400">
-          Reserved sponsor space. No advertising script is loaded unless the deployment configures one.
-        </div>
+      className={cn(
+        'wepo-ad-slot w-full overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50/70',
+        className,
       )}
+      aria-label="Advertisement"
+      data-wepo-ad-slot={label}
+      data-ad-status={status}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-4 py-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
+        <span className="text-[10px] text-slate-400">Sponsored · never in editors</span>
+      </div>
+      <div className="flex w-full justify-center overflow-hidden">{children}</div>
+      {status === 'failed' ? (
+        <p className="border-t border-slate-200/70 px-4 py-2 text-center text-[11px] leading-5 text-slate-400">
+          Sponsored content could not be loaded. The rest of Wepo works normally.
+        </p>
+      ) : null}
     </aside>
   );
 }

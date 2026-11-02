@@ -10,6 +10,17 @@ test.beforeEach(async ({ page }) => {
     // Force the deterministic download fallback in headless Chromium.
     delete (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
   });
+  // The suite exercises editor/document behaviour, not ad fill. Keep the
+  // third-party ad network out of these runs so tests stay deterministic.
+  await page.route(
+    /https:\/\/(www\.highrevenueformat\.com|pl32158799\.profitableratecpmnetwork\.com|pl32158800\.profitableratecpmnetwork\.com)\//,
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: '/* ad script blocked in document tests */',
+      }),
+  );
 });
 
 async function openSample(page: Page, kind: 'word' | 'sheets' | 'slides', file: string) {

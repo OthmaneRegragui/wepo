@@ -10,8 +10,11 @@ import { FileDropZone } from '../components/file-drop-zone';
 import { AppIconTile } from '../components/app-icon';
 import { PrivacyNotice } from '../components/privacy-notice';
 import { RecentDocuments } from '../components/recent-documents';
-import { AdSlot } from '../components/ads/ad-slot';
+import { DisplayBanner } from '../components/ads/DisplayBanner';
+import { NativeBanner } from '../components/ads/NativeBanner';
+import { SponsoredOffers } from '../components/ads/SmartLink';
 import { useDocumentLauncher } from '../hooks/use-document-launcher';
+import { useMediaQuery } from '../hooks/use-media-query';
 import { cn } from '../lib/utils';
 
 export function DashboardPage() {
@@ -39,6 +42,9 @@ export function DashboardPage() {
   });
 
   const { createBlank, busy } = useDocumentLauncher();
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  const wideDesktop = useMediaQuery('(min-width: 1280px)');
+  const tabletUp = useMediaQuery('(min-width: 640px)');
 
   return (
     <>
@@ -80,6 +86,16 @@ export function DashboardPage() {
           <div className="mx-auto mt-10 max-w-3xl">
             <FileDropZone />
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-200/70 bg-white/60 py-6" aria-label="Sponsored placement">
+        <div className="container-page flex justify-center">
+          {desktop ? (
+            <DisplayBanner placement="home-leaderboard" size="728x90" />
+          ) : (
+            <DisplayBanner placement="home-mobile-banner" size="320x50" />
+          )}
         </div>
       </section>
 
@@ -137,6 +153,18 @@ export function DashboardPage() {
             </article>
           ))}
         </div>
+
+        {tabletUp ? (
+          <div className="mt-9 flex justify-center">
+            <DisplayBanner placement="dashboard-banner" size="468x60" />
+          </div>
+        ) : null}
+      </section>
+
+      <section className="border-y border-slate-200/70 bg-slate-50/60 py-8" aria-label="Sponsored native placement">
+        <div className="container-page">
+          <NativeBanner />
+        </div>
       </section>
 
       <section className="border-y border-slate-200/70 bg-white/70 py-14">
@@ -144,6 +172,9 @@ export function DashboardPage() {
           <div className="space-y-8">
             <RecentDocuments />
             <PrivacyNotice />
+            <div className="flex justify-center">
+              <DisplayBanner placement="home-rectangle" size="300x250" />
+            </div>
           </div>
           <div className="space-y-4">
             <h2 className="text-lg font-semibold tracking-tight text-slate-900">Built for files that matter</h2>
@@ -176,9 +207,21 @@ export function DashboardPage() {
                 </li>
               ))}
             </ul>
-            <AdSlot className="mt-6" />
+            {desktop ? (
+              <div className="flex justify-center pt-2">
+                <DisplayBanner
+                  key={wideDesktop ? 'sidebar-160x600' : 'sidebar-160x300'}
+                  placement="home-sidebar"
+                  size={wideDesktop ? '160x600' : '160x300'}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
+      </section>
+
+      <section className="container-page py-8">
+        <SponsoredOffers />
       </section>
 
       <section className="container-page py-14">

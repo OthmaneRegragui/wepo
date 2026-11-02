@@ -34,13 +34,21 @@ Keep a Changelog, and versions use Semantic Versioning.
 - Cloudflare Workers Static Assets deployment through `wrangler.jsonc` and
   Wrangler 4, with the SPA fallback configured in Wrangler. `.nvmrc` pins the
   Node version used by Workers Builds.
+- Adsterra advertising on the home/dashboard route: exact Social Bar, native
+  banner, smartlink, and six display-banner publisher codes; serial
+  `atOptions` loading; responsive desktop/mobile/sidebar placement selection;
+  build-time format and placement flags; duplicate prevention; graceful
+  failure handling; and a scoped `credentialless` iframe bridge that preserves
+  COOP/COEP and `SharedArrayBuffer`.
+- Route-gated ad suppression that hides Social Bar nodes on editor, print,
+  import/export, and informational routes. Popunder remains disabled pending an
+  official publisher code.
 - Unit tests for detection, ZIP audit, file loading, CSV conversion, download
   fallback and naming, and storage-unavailable behavior.
 - Playwright end-to-end tests for navigation, Word/Sheets/Slides opening,
   formula editing, CSV export, slide creation, save downloads, and unsupported
   file errors.
-- Project documentation: README, PLAN, ARCHITECTURE, LICENSES, COMPATIBILITY,
-  and CHANGELOG.
+- Project documentation: README, LICENSES, COMPATIBILITY, and CHANGELOG.
 
 ### Fixed
 
@@ -60,3 +68,6 @@ Keep a Changelog, and versions use Semantic Versioning.
   not fully supported.
 - The public domain and email in the source are placeholders
   (`wepo.example`) and must be replaced before launch.
+- Adsterra returns empty/no-op scripts to automated and datacenter traffic, so
+  local tests verify loader sequencing, CSP, failure handling, and editor
+  isolation but not real creative fill. No Popunder code is included.

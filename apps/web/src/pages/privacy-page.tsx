@@ -37,8 +37,9 @@ const sections = [
   {
     title: 'Advertising and third parties',
     body: [
-      'Informational pages (the home page and the landing pages) reserve an optional sponsor slot. No advertising script is loaded unless the deployment sets VITE_ADSENSE_CLIENT and VITE_ADSENSE_SLOT at build time. A configured ad script is a third party and may set its own cookies or identifiers under its own policy.',
-      'Editor routes never render an advertising slot. The application does not include social embeds, remote fonts or remote document converters. Fonts and templates are served from the same origin.',
+      'The home/dashboard route (/) displays advertising supplied by Adsterra: classic display banners, a native banner, a social bar and a clearly labelled sponsored smartlink. These placements are part of this build and can be disabled at build time with the VITE_ADS_* flags documented in the README.',
+      'Adsterra and its advertising partners are third parties. Their scripts may set cookies, local storage or device identifiers and may request creatives and tracking pixels from their own domains under their own policies. Wepo does not pass document contents, file names or extracted text to those scripts; the ad system has no access to the document store.',
+      'Advertising scripts are never loaded or rendered inside the Word, Sheets or Slides editors, print/PDF flows, file import/export flows, toolbars, dialogs or document canvases. A social bar that was already initialised on the home route is hidden and made non-interactive when you navigate to any other route.',
     ],
   },
   {

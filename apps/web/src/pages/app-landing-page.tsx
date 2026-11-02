@@ -18,7 +18,6 @@ import { OpenFileButton } from '../components/open-file-button';
 import { FileDropZone } from '../components/file-drop-zone';
 import { AppIconTile } from '../components/app-icon';
 import { PrivacyNotice } from '../components/privacy-notice';
-import { AdSlot } from '../components/ads/ad-slot';
 import { useDocumentLauncher } from '../hooks/use-document-launcher';
 import { cn } from '../lib/utils';
 
@@ -190,7 +189,6 @@ export function AppLandingPage({ kind }: { kind: AppKind }) {
                 </Link>
               </div>
             </div>
-            <AdSlot />
           </aside>
         </div>
       </section>
