@@ -188,11 +188,14 @@ Advertising is disabled at build time by any of these Vite environment flags:
 | `VITE_ADS_PLACEMENT_HOME_SMARTLINK=false` | Sponsored offers |
 | `VITE_ADS_PLACEMENT_SITE_SOCIAL_BAR=false` | Social Bar placement |
 
-The CSP in `_headers` allowlists the publisher and nested ad-network script
-origins (including `aqml.org`, wildcard Adsterra hosts and the creative CDN)
-plus HTTPS allowances for ad creatives, frames, images, fonts, media, and
-tracking beacons. COOP `same-origin` and COEP `credentialless` remain in place,
-so cross-origin creatives and pixels without CORP headers load without
+Adsterra renders classic display and native banners by writing an inline
+`<script>` into an `about:blank` frame. Those frames inherit the page policy, so
+`script-src` must permit inline scripts and any HTTPS sub-origin the networks
+inject at runtime; a host allowlist alone leaves the creative containers empty
+whenever the network rotates domains. The CSP in `_headers` therefore uses
+`script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:` while every other
+directive stays scoped. COOP `same-origin` and COEP `credentialless` remain in
+place, so cross-origin creatives and pixels without CORP headers load without
 weakening cross-origin isolation or breaking `SharedArrayBuffer`. A scoped
 `document.createElement` patch also marks ad-created iframes as
 `credentialless` for browsers that still require the attribute.

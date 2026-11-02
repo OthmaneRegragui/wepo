@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   AD_PLACEMENTS,
@@ -121,5 +122,25 @@ describe('Adsterra configuration', () => {
     expect(parseAdFlag('no')).toBe(false);
     expect(parseAdFlag('disabled')).toBe(false);
     expect(parseAdFlag(undefined, false)).toBe(false);
+  });
+});
+
+describe('Deployment headers', () => {
+  const headersFile = readFileSync(new URL('../../apps/web/public/_headers', import.meta.url), 'utf8');
+  const viteConfig = readFileSync(new URL('../../apps/web/vite.config.ts', import.meta.url), 'utf8');
+
+  it('keeps third-party creatives loadable without CORP headers', () => {
+    expect(headersFile).toContain('Cross-Origin-Embedder-Policy: credentialless');
+    expect(headersFile).not.toContain('Cross-Origin-Embedder-Policy: require-corp');
+  });
+
+  it('allows the inline scripts and rotating hosts Adsterra injects', () => {
+    expect(headersFile).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:;");
+    expect(headersFile).not.toContain("'unsafe-eval'");
+  });
+
+  it('mirrors the production policy in the Vite preview server', () => {
+    expect(viteConfig).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:;");
+    expect(viteConfig).toContain("'Cross-Origin-Embedder-Policy': 'credentialless'");
   });
 });

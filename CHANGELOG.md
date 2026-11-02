@@ -59,9 +59,11 @@ Keep a Changelog, and versions use Semantic Versioning.
 
 ### Fixed
 
-- Adsterra's nested `aqml.org` script and CDN creatives are no longer blocked by
-  the production CSP. The script allowlist now covers the publisher, nested ad
-  network and creative hosts.
+- Adsterra display banners were blank because the network injects an inline
+  script into an `about:blank` frame that inherits the page policy, and because
+  nested creative domains rotate. `script-src` now allows inline scripts and
+  HTTPS sub-origins (still without `unsafe-eval`), so the leaderboard,
+  rectangle, native and social formats can render their creatives.
 - Third-party ad images, tracking pixels and iframes no longer fail CORP checks:
   the site uses COEP `credentialless` instead of `require-corp`, which keeps
   cross-origin isolation and `SharedArrayBuffer` available while allowing
