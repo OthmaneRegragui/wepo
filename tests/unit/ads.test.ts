@@ -80,6 +80,7 @@ describe('Adsterra configuration', () => {
       [
         'app-rectangle',
         'dashboard-banner',
+        'editor-rectangle',
         'home-rectangle',
         'home-sidebar',
         'home-smartlink',
@@ -91,6 +92,7 @@ describe('Adsterra configuration', () => {
     );
     expect(isAdPlacementEnabled('site-leaderboard')).toBe(true);
     expect(isAdPlacementEnabled('app-rectangle')).toBe(true);
+    expect(isAdPlacementEnabled('editor-rectangle')).toBe(true);
     expect(isAdFormatEnabled('display-banner')).toBe(true);
     expect(adConfig.formats.smartlink).toBe(true);
   });
@@ -135,12 +137,11 @@ describe('Deployment headers', () => {
   });
 
   it('allows the inline scripts and rotating hosts Adsterra injects', () => {
-    expect(headersFile).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:;");
-    expect(headersFile).not.toContain("'unsafe-eval'");
+    expect(headersFile).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval' https:;");
   });
 
   it('mirrors the production policy in the Vite preview server', () => {
-    expect(viteConfig).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:;");
+    expect(viteConfig).toContain("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval' https:;");
     expect(viteConfig).toContain("'Cross-Origin-Embedder-Policy': 'credentialless'");
   });
 });

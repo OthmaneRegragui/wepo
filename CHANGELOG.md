@@ -61,9 +61,9 @@ Keep a Changelog, and versions use Semantic Versioning.
 
 - Adsterra display banners were blank because the network injects an inline
   script into an `about:blank` frame that inherits the page policy, and because
-  nested creative domains rotate. `script-src` now allows inline scripts and
-  HTTPS sub-origins (still without `unsafe-eval`), so the leaderboard,
-  rectangle, native and social formats can render their creatives.
+  nested creative domains rotate. `script-src` now allows inline scripts,
+  `eval()` and HTTPS sub-origins, so the leaderboard, rectangle, native and
+  social formats can render their creatives.
 - Third-party ad images, tracking pixels and iframes no longer fail CORP checks:
   the site uses COEP `credentialless` instead of `require-corp`, which keeps
   cross-origin isolation and `SharedArrayBuffer` available while allowing
@@ -71,6 +71,11 @@ Keep a Changelog, and versions use Semantic Versioning.
 - Display advertising now follows the shared layout and appears on every content
   route, with a responsive top banner and a correctly positioned in-content
   rectangle on Word, Sheets and Slides landing pages.
+- The Word, Sheets and Slides editors now show one desktop-only 300 × 250
+  sponsor rail in a dedicated column beside the canvas. It waits for the engine
+  bridge, is excluded from print, and hides below the 1280px breakpoint so the
+  document keeps the full width on smaller screens. App landing page rectangles
+  stay sticky beside the content on large screens.
 - Sheets and Slides editors stalled because a height-constrained loading
   indicator collapsed the editor workspace before first paint. Editors now
   render at full size behind an absolute overlay, and the Sheets engine uses a

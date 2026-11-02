@@ -26,7 +26,7 @@ export function AdSlot({ className, label = 'Advertisement', status = 'idle', ch
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-4 py-2">
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
-        <span className="text-[10px] text-slate-400">Sponsored · never in editors</span>
+        <span className="text-[10px] text-slate-400">Sponsored</span>
       </div>
       <div className="flex w-full justify-center overflow-hidden">{children}</div>
       {status === 'failed' ? (

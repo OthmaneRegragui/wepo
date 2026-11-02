@@ -143,7 +143,7 @@ export function AppLandingPage({ kind }: { kind: AppKind }) {
             </div>
           </div>
 
-          <aside className="space-y-5">
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             <DisplayBanner placement="app-rectangle" size="300x250" />
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
               <h2 className="text-base font-semibold text-slate-900">How it stays local</h2>

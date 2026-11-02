@@ -20,6 +20,7 @@ import { LogoMark } from '../components/logo';
 import { AppIcon } from '../components/app-icon';
 import { OpenFileButton } from '../components/open-file-button';
 import { EditorLoading } from '../components/ui/spinner';
+import { DisplayBanner } from '../components/ads/DisplayBanner';
 import type { EditorBridge } from '../editors/types';
 import { APPS, appPath } from '../lib/apps';
 import { cn } from '../lib/utils';
@@ -426,45 +427,69 @@ export function EditorPage() {
         </div>
       )}
 
-      <main className="relative min-h-0 flex-1">
-        <EditorErrorBoundary key={`${document.id}-${retryKey}`} onReset={() => setRetryKey((key) => key + 1)}>
-          <Suspense fallback={<EditorLoading label={`Loading the ${APPS[kind].name} engine`} />}>
-            {kind === 'word' && (
-              <WordEditor
-                bytes={document.bytes}
-                fileName={document.name}
-                onReady={handleReady}
-                onDirty={markDirty}
-                onError={handleEditorError}
-              />
-            )}
-            {kind === 'sheets' && (
-              <SheetsEditor
-                bytes={document.bytes}
-                fileName={document.name}
-                onReady={handleReady}
-                onDirty={markDirty}
-                onError={handleEditorError}
-              />
-            )}
-            {kind === 'slides' && (
-              <SlidesEditor
-                bytes={document.bytes}
-                fileName={document.name}
-                onReady={handleReady}
-                onDirty={markDirty}
-                onError={handleEditorError}
-              />
-            )}
-          </Suspense>
-        </EditorErrorBoundary>
-        {!bridge && !editorError && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-            <span className="rounded-full border border-slate-200 bg-white/95 px-3 py-1.5 text-xs text-slate-500 shadow-sm">
-              <Spinner label="Starting the local engine" />
-            </span>
-          </div>
-        )}
+      <main className="relative flex min-h-0 flex-1">
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <EditorErrorBoundary key={`${document.id}-${retryKey}`} onReset={() => setRetryKey((key) => key + 1)}>
+            <Suspense fallback={<EditorLoading label={`Loading the ${APPS[kind].name} engine`} />}>
+              {kind === 'word' && (
+                <WordEditor
+                  bytes={document.bytes}
+                  fileName={document.name}
+                  onReady={handleReady}
+                  onDirty={markDirty}
+                  onError={handleEditorError}
+                />
+              )}
+              {kind === 'sheets' && (
+                <SheetsEditor
+                  bytes={document.bytes}
+                  fileName={document.name}
+                  onReady={handleReady}
+                  onDirty={markDirty}
+                  onError={handleEditorError}
+                />
+              )}
+              {kind === 'slides' && (
+                <SlidesEditor
+                  bytes={document.bytes}
+                  fileName={document.name}
+                  onReady={handleReady}
+                  onDirty={markDirty}
+                  onError={handleEditorError}
+                />
+              )}
+            </Suspense>
+          </EditorErrorBoundary>
+          {!bridge && !editorError && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+              <span className="rounded-full border border-slate-200 bg-white/95 px-3 py-1.5 text-xs text-slate-500 shadow-sm">
+                <Spinner label="Starting the local engine" />
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/*
+          Desktop-only sponsor rail. Reserving the column before the engine is
+          ready avoids resizing the canvas; the publisher script itself waits
+          for the document bridge so WASM startup gets the bandwidth first.
+        */}
+        <aside
+          className="hidden w-[340px] shrink-0 border-l border-slate-200 bg-white px-5 py-4 no-print xl:block"
+          aria-label="Sponsored placement"
+          data-wepo-editor-rail
+        >
+          {bridge ? (
+            <>
+              <DisplayBanner placement="editor-rectangle" size="300x250" allowEditor />
+              <p className="mt-3 text-center text-[11px] leading-5 text-slate-500">
+                Sponsored placement keeps Wepo free. Your document stays in this tab.
+              </p>
+            </>
+          ) : (
+            <div className="h-[250px] w-[300px] rounded-2xl border border-dashed border-slate-200 bg-slate-50/70" aria-hidden />
+          )}
+        </aside>
       </main>
     </div>
   );

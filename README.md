@@ -150,11 +150,15 @@ than concealed on a live page. The top banner stays mounted across content-route
 transitions, so it is not reloaded on every navigation. It is never recreated or
 re-executed, so a filled placement survives route changes and duplicate widgets
 cannot register. Application landing pages add a route-local 300 × 250 rectangle
-in their content sidebar.
+in their content sidebar and keep it sticky on large screens.
 
-Active editor routes (`/:kind/edit`) do not use `SiteLayout`, so they contain no
-native or display slot. The globally mounted Social Bar remains active there
-because it is a separate publisher format and never covers the editing surface.
+Active editor routes (`/:kind/edit`) do not use `SiteLayout`, so they never get
+the native banner or the top leaderboard. On screens at least 1280px wide they
+reserve a fixed right rail for a single 300 × 250 `editor-rectangle`; the script
+mounts only after the editor bridge reports ready, so WASM startup keeps the
+bandwidth, and the rail is hidden in print. Narrower screens keep the full
+canvas width. The globally mounted Social Bar remains active there because it is
+a separate publisher format and never covers the editing surface.
 
 The Social Bar is initialised at most once per document lifecycle by
 `AdManager`, outside the routed layouts. Its injected top-level nodes are marked
@@ -183,6 +187,7 @@ Advertising is disabled at build time by any of these Vite environment flags:
 | `VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false` | 468 × 60 |
 | `VITE_ADS_PLACEMENT_HOME_RECTANGLE=false` | Home 300 × 250 |
 | `VITE_ADS_PLACEMENT_APP_RECTANGLE=false` | App landing 300 × 250 |
+| `VITE_ADS_PLACEMENT_EDITOR_RECTANGLE=false` | Editor side rail 300 × 250 |
 | `VITE_ADS_PLACEMENT_SITE_NATIVE=false` | Native banner placement |
 | `VITE_ADS_PLACEMENT_HOME_SIDEBAR=false` | 160 × 600 / 160 × 300 |
 | `VITE_ADS_PLACEMENT_HOME_SMARTLINK=false` | Sponsored offers |
@@ -193,8 +198,10 @@ Adsterra renders classic display and native banners by writing an inline
 `script-src` must permit inline scripts and any HTTPS sub-origin the networks
 inject at runtime; a host allowlist alone leaves the creative containers empty
 whenever the network rotates domains. The CSP in `_headers` therefore uses
-`script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https:` while every other
-directive stays scoped. COOP `same-origin` and COEP `credentialless` remain in
+`script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval' https:` while
+every other directive stays scoped. Adsterra's obfuscated runtime also calls
+`eval()` from its timers, so `'unsafe-eval'` is required for some creatives.
+COOP `same-origin` and COEP `credentialless` remain in
 place, so cross-origin creatives and pixels without CORP headers load without
 weakening cross-origin isolation or breaking `SharedArrayBuffer`. A scoped
 `document.createElement` patch also marks ad-created iframes as

@@ -6,6 +6,7 @@ import {
   isAdFormatEnabled,
   isAdPlacementEnabled,
   isAdRoute,
+  isEditorRoute,
   type AdPlacementId,
   type DisplayBannerSize,
 } from './ad-config';
@@ -17,19 +18,22 @@ export interface DisplayBannerProps {
   size: DisplayBannerSize;
   className?: string;
   label?: string;
+  /** Opt a dedicated placement into `/:kind/edit` routes (editor side rail). */
+  allowEditor?: boolean;
 }
 
 /**
  * Classic Adsterra display banner. It renders a dedicated container at the
  * exact publisher dimensions and delegates script sequencing to ad-loader.
  */
-export function DisplayBanner({ placement, size, className, label }: DisplayBannerProps) {
+export function DisplayBanner({ placement, size, className, label, allowEditor = false }: DisplayBannerProps) {
   const { pathname } = useLocation();
   const config = DISPLAY_BANNERS[size];
+  const routeEligible = isAdRoute(pathname) || (allowEditor && isEditorRoute(pathname));
   const enabled =
     isAdFormatEnabled('display-banner') &&
     isAdPlacementEnabled(placement) &&
-    isAdRoute(pathname);
+    routeEligible;
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<AdStatus>('idle');
 

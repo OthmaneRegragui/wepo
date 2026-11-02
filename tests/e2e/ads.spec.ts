@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import path from 'node:path';
 
 const AD_SCRIPT_PATTERN =
   /https:\/\/(www\.highrevenueformat\.com|pl32158799\.profitableratecpmnetwork\.com|pl32158800\.profitableratecpmnetwork\.com)\//;
@@ -257,7 +258,7 @@ test.describe('eligible route coverage', () => {
   }
 });
 
-test('editor routes keep the global Social Bar but load no native or display placements', async ({ page }) => {
+test('editor routes without a document keep the Social Bar but load no ad placements', async ({ page }) => {
   await installAdStubs(page);
   await page.goto('/word/edit');
   await expect(page).toHaveURL(/\/word\/edit/);
@@ -270,6 +271,35 @@ test('editor routes keep the global Social Bar but load no native or display pla
   expect(await page.evaluate(() => (window as Window & { __nativeLoads?: number }).__nativeLoads)).toBeUndefined();
   expect(await page.evaluate(() => (window as Window & { __socialLoads?: number }).__socialLoads)).toBe(1);
   expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
+});
+
+test.describe('editor sponsor rail', () => {
+  for (const kind of ['word', 'sheets', 'slides'] as const) {
+    test(`${kind} editor shows the desktop 300x250 rail once the engine is ready`, async ({ page }) => {
+      await installAdStubs(page);
+      await page.goto(`/${kind}`);
+
+      const extension = kind === 'word' ? 'docx' : kind === 'sheets' ? 'xlsx' : 'pptx';
+      await page
+        .locator('input[type="file"]')
+        .first()
+        .setInputFiles(path.resolve(process.cwd(), `apps/web/public/samples/sample.${extension}`));
+      await page.waitForURL(new RegExp(`/${kind}/edit`), { timeout: 60_000 });
+
+      const save = page.getByRole('button', { name: /Save a copy/i });
+      await expect(save).toBeEnabled({ timeout: 120_000 });
+
+      const rail = page.locator('[data-wepo-editor-rail]');
+      await expect(rail).toBeVisible();
+      await expect(rail.locator(`script[data-wepo-ad-key="${EXPECTED['300x250'].key}"]`)).toHaveCount(1, {
+        timeout: 30_000,
+      });
+
+      await expect(page.locator('[data-wepo-native-container]')).toHaveCount(0);
+      expect(await page.locator('script[data-wepo-social-bar]').count()).toBe(1);
+      expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
+    });
+  }
 });
 
 test('blocked ad scripts fail gracefully without breaking the page', async ({ page }) => {

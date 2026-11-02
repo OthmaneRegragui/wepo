@@ -15,6 +15,7 @@
  *   VITE_ADS_PLACEMENT_DASHBOARD_BANNER=false
  *   VITE_ADS_PLACEMENT_HOME_RECTANGLE=false
  *   VITE_ADS_PLACEMENT_APP_RECTANGLE=false
+ *   VITE_ADS_PLACEMENT_EDITOR_RECTANGLE=false
  *   VITE_ADS_PLACEMENT_SITE_NATIVE=false
  *   VITE_ADS_PLACEMENT_HOME_SIDEBAR=false
  *   VITE_ADS_PLACEMENT_HOME_SMARTLINK=false
@@ -29,6 +30,7 @@ export type AdPlacementId =
   | 'dashboard-banner'
   | 'home-rectangle'
   | 'app-rectangle'
+  | 'editor-rectangle'
   | 'site-native'
   | 'home-sidebar'
   | 'home-smartlink'
@@ -150,6 +152,7 @@ const placementDefinitions: ReadonlyArray<Omit<AdPlacementConfig, 'enabled'>> = 
   { id: 'dashboard-banner', format: 'display-banner', label: '468 × 60 dashboard banner' },
   { id: 'home-rectangle', format: 'display-banner', label: '300 × 250 rectangle' },
   { id: 'app-rectangle', format: 'display-banner', label: '300 × 250 app rectangle' },
+  { id: 'editor-rectangle', format: 'display-banner', label: '300 × 250 editor rail' },
   { id: 'site-native', format: 'native-banner', label: 'Native banner' },
   { id: 'home-sidebar', format: 'display-banner', label: 'Desktop sidebar banner' },
   { id: 'home-smartlink', format: 'smartlink', label: 'Sponsored offers' },
