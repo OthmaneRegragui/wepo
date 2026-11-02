@@ -27,8 +27,7 @@ Browser tab
 ```
 apps/web                 React + TypeScript + Vite application
   public/                static assets served as-is
-    _headers             Cloudflare Pages security headers and CSP
-    _redirects           SPA fallback
+    _headers             Cloudflare Workers security headers and CSP
     fonts/               curated OFL font faces (generated)
     licenses/            bundled license notices (generated)
     samples/             real DOCX/XLSX/PPTX test files (generated)
@@ -178,12 +177,18 @@ same-origin or blob URLs.
 
 ## Static deployment
 
-The reference target is Cloudflare Pages:
+The reference target is Cloudflare Workers with Static Assets:
 
 - Build command: `npm run build`
 - Output directory: `apps/web/dist`
+- `wrangler.jsonc` configures `assets.directory` and
+  `not_found_handling: "single-page-application"` for client-side routing.
 - `_headers` supplies the security and cross-origin isolation headers.
-- `_redirects` supplies the SPA fallback.
+- `.nvmrc` pins Node 22.12.0 for the Workers Builds image.
+
+Deploy with `npx wrangler deploy --config ./wrangler.jsonc` from the repository
+root. The Worker has no `main` entry point and no API; Wrangler serves the
+static build directly.
 
 Any static host works if it can serve the same headers. Without COOP/COEP,
 `SharedArrayBuffer` is unavailable and the worker-based Sheets editor may fall

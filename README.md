@@ -80,7 +80,31 @@ Editors are powered by [BetterOffice](https://github.com/openooxml/betteroffice)
 
 ## Deployment
 
-Optimized for static hosting (e.g., Cloudflare Pages). Requires COOP/COEP headers for SharedArrayBuffer support (see `public/_headers`).
+The reference target is Cloudflare Workers with Static Assets. The root
+`wrangler.jsonc` points Wrangler at `apps/web/dist`, enables the SPA fallback,
+and keeps the Worker static-assets-only. Build and deploy from the repository
+root:
+
+```bash
+npm ci
+npm run build
+npx wrangler deploy --config ./wrangler.jsonc
+```
+
+Cloudflare Workers Builds settings:
+
+| Setting | Value |
+|---|---|
+| Root directory | `/` |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy --config ./wrangler.jsonc` |
+| Include paths | `*` |
+| Exclude paths | `node_modules/**`, `.git/**` |
+
+`apps/web/public/_headers` is copied into the build and applied by Workers
+Static Assets. It supplies COOP, COEP, CORP, CSP, and the other security headers
+needed for `SharedArrayBuffer` and WebAssembly. `.nvmrc` pins Node 22.12.0 for
+the build image. No backend Worker or API is required.
 
 ## License
 

@@ -10,7 +10,8 @@ A static, open-source office suite that runs entirely in the browser:
 - Open, edit, and export DOCX, XLSX, CSV, and PPTX files.
 - Produce PDF where the engines support a faithful print path.
 - Never upload document bytes or filenames for processing.
-- Deploy as static assets (Cloudflare Pages is the reference target).
+- Deploy as static assets (Cloudflare Workers with Static Assets is the
+  reference target).
 - Be explicit about unsupported features instead of pretending full Office
   compatibility.
 
@@ -97,13 +98,15 @@ Completed:
   formula edit/CSV export/save, Slides open/add slide/save, and unsupported
   file errors.
 - Production preview headers checked for COOP/COEP/CORP.
+- Cloudflare Workers Static Assets configuration validated with
+  `wrangler deploy --dry-run` and a local `wrangler dev` session: the SPA
+  fallback and `_headers` security headers are served from the built output.
 
 Remaining:
 
 - Run the manual compatibility matrix against a wider set of real files
   produced by Microsoft Office, LibreOffice, and Google Workspace.
-- Verify the Cloudflare Pages deployment with production headers and real
-  static assets.
+- Verify the production Cloudflare Workers deployment with a real hostname.
 - Check print/PDF output in Chromium, Firefox, and Safari.
 
 ## Phase 5 - Documentation
@@ -122,7 +125,7 @@ Status: **pending**
 
 - Final `npm run check` and full E2E run.
 - License and notice review for the exact production bundle.
-- Cloudflare Pages project, custom domain, and HTTPS.
+- Cloudflare Workers project, custom domain, and HTTPS.
 - Verify that no analytics or remote document calls exist in the production
   bundle.
 - Publish the 0.1.0 release notes and compatibility report.

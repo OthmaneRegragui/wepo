@@ -30,7 +30,10 @@ Keep a Changelog, and versions use Semantic Versioning.
 - Lazy-loaded editor engines and workers; per-editor code splitting.
 - Bundled OFL font faces and notices for common Office font substitutions.
 - Static deployment assets: strict CSP and COOP/COEP/CORP headers, SPA
-  redirects, robots, sitemap, manifest, favicon, and Open Graph image.
+  routing, robots, sitemap, manifest, favicon, and Open Graph image.
+- Cloudflare Workers Static Assets deployment through `wrangler.jsonc` and
+  Wrangler 4, with the SPA fallback configured in Wrangler. `.nvmrc` pins the
+  Node version used by Workers Builds.
 - Unit tests for detection, ZIP audit, file loading, CSV conversion, download
   fallback and naming, and storage-unavailable behavior.
 - Playwright end-to-end tests for navigation, Word/Sheets/Slides opening,
@@ -46,7 +49,7 @@ Keep a Changelog, and versions use Semantic Versioning.
   render at full size behind an absolute overlay, and the Sheets engine uses a
   compact inline indicator so the grid can measure itself.
 - Enabled COOP/COEP in the Vite preview server so `SharedArrayBuffer` and the
-  worker-based Sheets editor can be tested outside Cloudflare Pages.
+  worker-based Sheets editor can be tested outside Cloudflare.
 
 ### Known limitations
 

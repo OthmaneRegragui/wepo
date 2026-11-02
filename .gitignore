@@ -11,6 +11,7 @@ test-results/
 playwright-report/
 blob-report/
 .tmp/
+.wrangler/
 apps/web/public/fonts/
 apps/web/public/samples/
 apps/web/public/templates/
